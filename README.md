@@ -1,4 +1,4 @@
-Deepfake Detection System 🕵️‍♂️
+Deepfake Detection System 
 
 A Deepfake Detection System built using AI/ML and Deep Learning in Google Colab.
 This project demonstrates how machine learning can be used to classify images or video frames as Real or Fake based on deepfake patterns.
