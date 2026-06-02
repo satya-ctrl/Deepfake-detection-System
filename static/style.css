@@ -1816,3 +1816,85 @@ body {
     }
 }
 
+/* Developer Cyber Signature */
+.dev-signature {
+    margin-top: auto;
+    padding: 16px;
+    background: rgba(0, 242, 254, 0.015);
+    border-top: 1px dashed rgba(255, 255, 255, 0.03);
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    color: var(--text-muted);
+    font-size: 11px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    position: relative;
+    border-radius: 0 0 14px 14px;
+    transition: var(--transition-smooth);
+    overflow: hidden;
+}
+
+.dev-signature i {
+    color: var(--cyan);
+    font-size: 14px;
+}
+
+.dev-sig-text {
+    opacity: 0;
+    transform: translateX(-10px);
+    transition: var(--transition-smooth);
+}
+
+.side-nav:hover .dev-sig-text {
+    opacity: 1;
+    transform: translateX(0);
+    transition-delay: 0.15s;
+}
+
+.dev-sig-glow {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(0, 242, 254, 0.05), transparent);
+    transform: translateX(-100%);
+    transition: transform 0.6s ease;
+}
+
+.dev-signature:hover .dev-sig-glow {
+    transform: translateX(100%);
+}
+
+.dev-signature:hover {
+    color: var(--cyan);
+    background: rgba(0, 242, 254, 0.05);
+    text-shadow: 0 0 8px var(--cyan-glow);
+}
+
+/* Glitch RGB text split effect */
+.brand-text h1:hover, .landing-title:hover {
+    animation: cyberGlitch 0.3s linear infinite;
+    position: relative;
+    cursor: pointer;
+}
+
+@keyframes cyberGlitch {
+    0% {
+        text-shadow: 2px -1px 0 var(--pink), -2px 1px 0 var(--cyan);
+    }
+    25% {
+        text-shadow: -2px 1px 0 var(--pink), 2px -1px 0 var(--cyan);
+    }
+    50% {
+        text-shadow: 1px 2px 0 var(--pink), -1px -2px 0 var(--cyan);
+    }
+    75% {
+        text-shadow: -1px -2px 0 var(--pink), 1px 2px 0 var(--cyan);
+    }
+    100% {
+        text-shadow: 2px 0 0 var(--pink), -2px 0 0 var(--cyan);
+    }
+}
+

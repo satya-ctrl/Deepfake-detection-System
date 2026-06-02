@@ -43,11 +43,10 @@ else:
 app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024  # 32MB max upload
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
-# Database Configuration for Railway (PostgreSQL) with SQLite fallback
 if is_vercel:
-    db_url = os.environ.get("DATABASE_URL", "sqlite:////tmp/deepfake_audits.db")
+    db_url = os.environ.get("DATABASE_URL") or os.environ.get("POSTGRES_URL") or "sqlite:////tmp/deepfake_audits.db"
 else:
-    db_url = os.environ.get("DATABASE_URL", "sqlite:///deepfake_audits.db")
+    db_url = os.environ.get("DATABASE_URL") or "sqlite:///deepfake_audits.db"
 
 if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)

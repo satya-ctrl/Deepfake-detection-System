@@ -20,6 +20,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 
                 setTimeout(() => {
                     writeTerminalLine("AUTHORIZED FORENSIC CHANNEL CONFIGURED", "success");
+                    writeTerminalLine("SYSTEM DEVELOPER: SATYA IDENTIFIED [ROLE: ADMIN]", "warn");
                     writeTerminalLine("WELCOME TO DEEPSENSE CORE // HUB ONLINE", "success");
                 }, 800);
             }, 800);
