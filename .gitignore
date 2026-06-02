@@ -1,0 +1,31 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+.env
+.venv
+env/
+venv/
+ENV/
+
+# Datasets & Temp Files
+dataset_temp/
+Dataset/
+Dataset.zip
+deepfake_evaluation.xlsx
+uploads/*
+!uploads/.gitkeep
+
+# IDE Configs
+.vscode/
+.idea/
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# Large Neural Net Weights (downloaded separately)
+# *.h5
+
+# Local SQLite databases
+*.db
+deepfake_audits.db
+
