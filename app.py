@@ -31,13 +31,24 @@ try:
 except ImportError:
     print("[!] Pandas/Openpyxl not installed. Analytics will use default pre-calculated metrics.")
 
+is_vercel = os.environ.get("VERCEL") == "1"
+
 app = Flask(__name__, static_folder='static', template_folder='templates')
-app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+
+if is_vercel:
+    app.config['UPLOAD_FOLDER'] = '/tmp'
+else:
+    app.config['UPLOAD_FOLDER'] = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'uploads')
+
 app.config['MAX_CONTENT_LENGTH'] = 32 * 1024 * 1024  # 32MB max upload
 os.makedirs(app.config['UPLOAD_FOLDER'], exist_ok=True)
 
 # Database Configuration for Railway (PostgreSQL) with SQLite fallback
-db_url = os.environ.get("DATABASE_URL", "sqlite:///deepfake_audits.db")
+if is_vercel:
+    db_url = os.environ.get("DATABASE_URL", "sqlite:////tmp/deepfake_audits.db")
+else:
+    db_url = os.environ.get("DATABASE_URL", "sqlite:///deepfake_audits.db")
+
 if db_url.startswith("postgres://"):
     db_url = db_url.replace("postgres://", "postgresql://", 1)
 
