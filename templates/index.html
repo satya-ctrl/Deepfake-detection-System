@@ -1,526 +1,150 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>DeepSense // AI Deepfake Detection HUD</title>
-    
-    <!-- Fonts & Icons -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
-    <link href="https://cdn.jsdelivr.net/npm/lucide-static@0.321.0/font/lucide.min.css" rel="stylesheet">
-    
-    <!-- Styles & Chart.js -->
-    <link rel="stylesheet" href="/static/style.css?v=1.4">
-    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DeepSense // AI Deepfake Detection HUD</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500;600&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+
+  <!-- Tailwind Configuration -->
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            heading: ['"Instrument Serif"', 'serif'],
+            body: ['"Barlow"', 'sans-serif'],
+          },
+          borderRadius: {
+            DEFAULT: '9999px',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Liquid-Glass & Scanlines Design System Styles -->
+  <style>
+    :root {
+      --cyan: #00f2fe;
+      --cyan-glow: rgba(0, 242, 254, 0.4);
+      --purple: #9d4edd;
+      --purple-glow: rgba(157, 78, 221, 0.4);
+      --pink: #ff007f;
+      --pink-glow: rgba(255, 0, 127, 0.45);
+      --green: #10b981;
+      --green-glow: rgba(16, 185, 129, 0.4);
+    }
+
+    body {
+      background-color: #000;
+      color: #fff;
+      overflow-x: hidden;
+      margin: 0;
+      padding: 0;
+    }
+
+    .liquid-glass {
+      background: rgba(255, 255, 255, 0.01);
+      background-blend-mode: luminosity;
+      backdrop-filter: blur(4px);
+      -webkit-backdrop-filter: blur(4px);
+      border: none;
+      box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+      position: relative;
+      overflow: hidden;
+    }
+    .liquid-glass::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 1.4px;
+      background: linear-gradient(180deg,
+        rgba(255, 255, 255, 0.45) 0%,
+        rgba(255, 255, 255, 0.15) 20%,
+        rgba(255, 255, 255, 0) 40%,
+        rgba(255, 255, 255, 0) 60%,
+        rgba(255, 255, 255, 0.15) 80%,
+        rgba(255, 255, 255, 0.45) 100%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    .liquid-glass-strong {
+      background: rgba(255, 255, 255, 0.01);
+      background-blend-mode: luminosity;
+      backdrop-filter: blur(50px);
+      -webkit-backdrop-filter: blur(50px);
+      border: none;
+      box-shadow: 4px 4px 4px rgba(0, 0, 0, 0.05), inset 0 1px 1px rgba(255, 255, 255, 0.15);
+      position: relative;
+      overflow: hidden;
+    }
+    .liquid-glass-strong::before {
+      content: "";
+      position: absolute;
+      inset: 0;
+      border-radius: inherit;
+      padding: 1.4px;
+      background: linear-gradient(180deg,
+        rgba(255, 255, 255, 0.5) 0%,
+        rgba(255, 255, 255, 0.2) 20%,
+        rgba(255, 255, 255, 0) 40%,
+        rgba(255, 255, 255, 0) 60%,
+        rgba(255, 255, 255, 0.2) 80%,
+        rgba(255, 255, 255, 0.5) 100%);
+      -webkit-mask: linear-gradient(#fff 0 0) content-box, linear-gradient(#fff 0 0);
+      -webkit-mask-composite: xor;
+      mask-composite: exclude;
+      pointer-events: none;
+    }
+
+    /* Laser scan keyframes */
+    @keyframes scanAnimation {
+      0% { top: 0%; }
+      50% { top: 100%; }
+      100% { top: 0%; }
+    }
+
+    ::selection {
+      background: rgba(255, 255, 255, 0.2);
+    }
+  </style>
+
+  <!-- React core and Babel CDNs -->
+  <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
+  <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
+  
+  <!-- Framer Motion CDN -->
+  <script src="https://unpkg.com/framer-motion@11.11.17/dist/framer-motion.js"></script>
+  <script>window.FramerMotion = window.FramerMotion || window.Motion; window.Motion = window.Motion || window.FramerMotion;</script>
+
+  <!-- Chart.js CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 </head>
 <body>
-    <div class="glow-bg"></div>
-    <div class="glow-blobs-container">
-        <div class="glow-blob blob-1"></div>
-        <div class="glow-blob blob-2"></div>
-        <div class="glow-blob blob-3"></div>
-    </div>
-    <div class="scanlines"></div>
+  <div id="root"></div>
 
-    <!-- LANDING PAGE -->
-    <div class="landing-container" id="landing-page">
-        <div class="landing-glow"></div>
-        <div class="landing-grid"></div>
-        
-        <div class="landing-content">
-            <div class="landing-logo">
-                <div class="logo-outer">
-                    <div class="logo-inner-landing"></div>
-                </div>
-            </div>
-            
-            <h1 class="landing-title">DEEP·SENSE</h1>
-            <p class="landing-subtitle">AI DEEPFAKE DETECTION & BIOMETRIC FORENSICS CONSOLE</p>
-            
-            <div class="landing-terminal">
-                <div class="terminal-header">
-                    <span class="terminal-dot red"></span>
-                    <span class="terminal-dot yellow"></span>
-                    <span class="terminal-dot green"></span>
-                    <span class="terminal-title">SYSTEM STATUS LOG</span>
-                </div>
-                <div class="terminal-body" id="landing-terminal-body">
-                    <div class="log-row">> INITIATING DEEPSENSE BOOT CORE MODULES...</div>
-                    <div class="log-row">> MODEL VERIFICATION: Keras CNN (.h5) ACTIVE</div>
-                    <div class="log-row">> VIDEO PREPROCESSING ENGINE: Haar Cascade / OpenCV LOADED</div>
-                    <div class="log-row">> DEVELOPER PROTOCOL: SATYA AUTHORIZED [LEVEL 5]</div>
-                    <div class="log-row">> READY FOR USER INGESTION PROTOCOL.</div>
-                </div>
-            </div>
-            
-            <button class="btn btn-primary btn-landing" id="enter-system-btn">
-                <span>INITIALIZE CONSOLE</span>
-                <i class="lucide-chevron-right"></i>
-            </button>
-        </div>
-        
-        <footer class="landing-footer">
-            <span>DEVELOPER: SATYA // SECURE FORENSIC AUDIT LINK // LEVEL 5 ACCESS REQUIRED</span>
-        </footer>
-    </div>
-
-    <div class="app-container">
-        <!-- HEADER -->
-        <header class="app-header">
-            <div class="brand">
-                <div class="brand-logo">
-                    <div class="logo-inner"></div>
-                </div>
-                <div class="brand-text">
-                    <h1>DEEP·SENSE</h1>
-                    <span>AI DEEPFAKE DETECTOR</span>
-                </div>
-            </div>
-            
-            <div class="header-status">
-                <div class="status-indicator initializing" id="system-status-pill">
-                    <span class="status-dot"></span>
-                    <span class="status-text" id="system-status-text">INITIALIZING</span>
-                </div>
-            </div>
-        </header>
-
-        <!-- MAIN LAYOUT -->
-        <main class="app-main">
-            <!-- SIDE NAVIGATION -->
-            <nav class="side-nav">
-                <button class="nav-btn active" data-tab="detector-tab">
-                    <i class="lucide-scan"></i>
-                    <span>DeepScan HUD</span>
-                </button>
-                <button class="nav-btn" data-tab="analytics-tab">
-                    <i class="lucide-bar-chart-3"></i>
-                    <span>Model Analytics</span>
-                </button>
-                <button class="nav-btn" data-tab="dataset-tab">
-                    <i class="lucide-database"></i>
-                    <span>Dataset Hub</span>
-                </button>
-                <button class="nav-btn" data-tab="history-tab">
-                    <i class="lucide-history"></i>
-                    <span>Audit History</span>
-                </button>
-                <div class="dev-signature">
-                    <div class="dev-sig-glow"></div>
-                    <i class="lucide-code-2"></i>
-                    <span class="dev-sig-text">DEV // SATYA</span>
-                </div>
-            </nav>
-
-            <!-- CONTENT SECTIONS -->
-            <div class="content-viewport">
-                
-                <!-- TAB 1: DETECTOR HUD -->
-                <section class="tab-pane active" id="detector-tab">
-                    <div class="detector-layout">
-                        <!-- Left Panel: Scanner -->
-                        <div class="glass-panel scanner-panel">
-                            <div class="panel-header">
-                                <i class="lucide-cpu"></i>
-                                <h2>Analysis Console</h2>
-                                <span class="panel-subtitle">Feed media frame for verification</span>
-                            </div>
-                            
-                            <div class="scan-area" id="drop-zone">
-                                <div class="drop-zone-content" id="drop-zone-default">
-                                    <div class="glow-upload-icon">
-                                        <i class="lucide-upload-cloud"></i>
-                                    </div>
-                                    <h3>Drag & Drop Image or Video</h3>
-                                    <p>Supports PNG, JPG, MP4, AVI, MOV up to 32MB</p>
-                                    <button class="btn btn-primary" id="browse-btn">Browse Files</button>
-                                    <input type="file" id="file-input" accept="image/*,video/*" style="display: none;">
-                                </div>
-
-                                <div class="scan-preview-container" id="preview-container" style="display: none;">
-                                    <img id="scan-preview" src="" alt="Preview" style="display: none;">
-                                    <video id="scan-video" src="" autoplay loop muted></video>
-                                    <canvas id="biometric-canvas" class="biometric-canvas"></canvas>
-                                    <div class="scanner-laser" id="laser"></div>
-                                    <div class="face-overlay-container" id="face-box-container"></div>
-                                </div>
-                            </div>
-                            
-                            <div class="scanner-footer" id="scanner-action-bar" style="display: none;">
-                                <div class="scanner-info">
-                                    <i class="lucide-file-image"></i>
-                                    <span class="file-name" id="file-details">image.jpg</span>
-                                </div>
-                                <button class="btn btn-secondary" id="reset-btn">Reset Scanner</button>
-                            </div>
-                        </div>
-
-                        <!-- Right Panel: Results HUD -->
-                        <div class="glass-panel results-panel" id="results-placeholder">
-                            <div class="hud-waiting wave-animation">
-                                <i class="lucide-radar"></i>
-                                <h3>Awaiting Input</h3>
-                                <p>Upload an image or video to trigger the AI deepfake analysis model</p>
-                            </div>
-                        </div>
-
-                        <div class="glass-panel results-panel" id="results-panel" style="display: none;">
-                            <div class="panel-header border-glow">
-                                <i class="lucide-activity"></i>
-                                <h2>Audit Summary</h2>
-                                <span class="badge" id="hud-mode-badge">DEMO</span>
-                            </div>
-                            
-                            <!-- Verdict Section -->
-                            <div class="verdict-container">
-                                <div class="verdict-label">VERDICT STATUS</div>
-                                <div class="verdict-value" id="verdict-text">REAL</div>
-                                <div class="verdict-bar-bg">
-                                    <div class="verdict-bar-fill" id="verdict-bar"></div>
-                                </div>
-                            </div>
-
-                            <!-- Confidence Score Gauge -->
-                            <div class="confidence-section">
-                                <div class="gauge-wrapper">
-                                    <svg class="progress-ring" width="160" height="160">
-                                        <circle class="progress-ring__circle-bg" stroke="rgba(255,255,255,0.03)" stroke-width="6" fill="transparent" r="70" cx="80" cy="80"/>
-                                        <circle class="progress-ring__circle" id="confidence-ring" stroke="var(--cyan)" stroke-width="6" fill="transparent" r="70" cx="80" cy="80"/>
-                                    </svg>
-                                    <div class="gauge-center">
-                                        <span class="gauge-number" id="confidence-number">98.5%</span>
-                                        <span class="gauge-label">CONFIDENCE</span>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <!-- Live Terminal Logs -->
-                            <div class="terminal-log-panel" id="terminal-log">
-                                <!-- Streamed via Javascript -->
-                            </div>
-
-                            <!-- Video Analytics Dashboard (shown for videos only) -->
-                            <div class="video-analytics-section" id="video-analytics-section" style="display: none;">
-                                <h3>VIDEO FORENSIC DETAILS</h3>
-                                
-                                <div class="video-metric-grid">
-                                    <div class="video-metric-card">
-                                        <div class="metric-label">TOTAL FRAMES</div>
-                                        <div class="metric-val" id="video-total-frames">0</div>
-                                    </div>
-                                    <div class="video-metric-card real">
-                                        <div class="metric-label">REAL FRAMES</div>
-                                        <div class="metric-val" id="video-real-frames">0</div>
-                                    </div>
-                                    <div class="video-metric-card fake">
-                                        <div class="metric-label">FAKE FRAMES</div>
-                                        <div class="metric-val" id="video-fake-frames">0</div>
-                                    </div>
-                                </div>
-
-                                <div class="video-chart-card">
-                                    <h4>FRAME DEEPFAKE TIMELINE</h4>
-                                    <canvas id="videoTimelineChart"></canvas>
-                                </div>
-                                
-                                <div class="video-chart-card">
-                                    <h4>FRAME CLASSIFICATION</h4>
-                                    <canvas id="videoDistributionChart"></canvas>
-                                </div>
-                            </div>
-
-                            <!-- Diagnostic Metrics -->
-                            <div class="diagnostics-section" id="image-diagnostics-section">
-                                <h3>DIAGNOSTIC METRICS</h3>
-                                <div class="metrics-grid">
-                                    <div class="metric-hud-item">
-                                        <div class="metric-hud-header">
-                                            <span>Blending Artifacts</span>
-                                            <span id="metric-blending-val">2.4%</span>
-                                        </div>
-                                        <div class="metric-hud-bar">
-                                            <div class="metric-hud-fill" id="metric-blending-bar" style="width: 2.4%;"></div>
-                                        </div>
-                                    </div>
-                                    <div class="metric-hud-item">
-                                        <div class="metric-hud-header">
-                                            <span>Facial Symmetry Dev.</span>
-                                            <span id="metric-symmetry-val">5.8%</span>
-                                        </div>
-                                        <div class="metric-hud-bar">
-                                            <div class="metric-hud-fill" id="metric-symmetry-bar" style="width: 5.8%;"></div>
-                                        </div>
-                                    </div>
-                                    <div class="metric-hud-item">
-                                        <div class="metric-hud-header">
-                                            <span>Double Edge Noise</span>
-                                            <span id="metric-edge-val">12.0%</span>
-                                        </div>
-                                        <div class="metric-hud-bar">
-                                            <div class="metric-hud-fill" id="metric-edge-bar" style="width: 12.0%;"></div>
-                                        </div>
-                                    </div>
-                                    <div class="metric-hud-item">
-                                        <div class="metric-hud-header">
-                                            <span>Color Incoherence</span>
-                                            <span id="metric-color-val">3.1%</span>
-                                        </div>
-                                        <div class="metric-hud-bar">
-                                            <div class="metric-hud-fill" id="metric-color-bar" style="width: 3.1%;"></div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-
-                            <button class="btn btn-glow btn-full" id="export-report-btn">
-                                <i class="lucide-download"></i>
-                                Export PDF Audit Report
-                            </button>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- TAB 2: MODEL ANALYTICS -->
-                <section class="tab-pane" id="analytics-tab">
-                    <div class="analytics-layout">
-                        <!-- Metric Summary Grid -->
-                        <div class="analytics-cards-grid">
-                            <div class="glass-card">
-                                <div class="card-icon cyan-glow"><i class="lucide-check-circle-2"></i></div>
-                                <div class="card-info">
-                                    <span class="card-label">Overall Accuracy</span>
-                                    <h3 class="card-value" id="stats-accuracy">94.25%</h3>
-                                </div>
-                            </div>
-                            <div class="glass-card">
-                                <div class="card-icon purple-glow"><i class="lucide-trending-up"></i></div>
-                                <div class="card-info">
-                                    <span class="card-label">Model Area (AUC)</span>
-                                    <h3 class="card-value" id="stats-auc">0.981</h3>
-                                </div>
-                            </div>
-                            <div class="glass-card">
-                                <div class="card-icon green-glow"><i class="lucide-shield-check"></i></div>
-                                <div class="card-info">
-                                    <span class="card-label">Precision (Real)</span>
-                                    <h3 class="card-value" id="stats-prec-real">93.80%</h3>
-                                </div>
-                            </div>
-                            <div class="glass-card">
-                                <div class="card-icon pink-glow"><i class="lucide-alert-triangle"></i></div>
-                                <div class="card-info">
-                                    <span class="card-label">Precision (Fake)</span>
-                                    <h3 class="card-value" id="stats-prec-fake">94.71%</h3>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Graphs Grid -->
-                        <div class="graphs-grid">
-                            <div class="glass-panel graph-panel">
-                                <div class="panel-header">
-                                    <i class="lucide-line-chart"></i>
-                                    <h2>Training & Validation Accuracy</h2>
-                                </div>
-                                <div class="chart-container">
-                                    <canvas id="accuracyChart"></canvas>
-                                </div>
-                            </div>
-                            <div class="glass-panel graph-panel">
-                                <div class="panel-header">
-                                    <i class="lucide-activity"></i>
-                                    <h2>Training & Validation Loss</h2>
-                                </div>
-                                <div class="chart-container">
-                                    <canvas id="lossChart"></canvas>
-                                </div>
-                            </div>
-                            <div class="glass-panel graph-panel full-width-mobile">
-                                <div class="panel-header">
-                                    <i class="lucide-grid"></i>
-                                    <h2>Confusion Matrix</h2>
-                                </div>
-                                <div class="chart-container cm-chart-container">
-                                    <canvas id="confusionMatrixChart"></canvas>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- Model Layer Viewer -->
-                        <div class="glass-panel network-panel">
-                            <div class="panel-header">
-                                <i class="lucide-layers"></i>
-                                <h2>Neural Network Architecture</h2>
-                                <span class="panel-subtitle">Sequential CNN layout (128x128x3 input)</span>
-                            </div>
-                            <div class="network-flow">
-                                <div class="flow-node input">
-                                    <div class="node-badge">INPUT</div>
-                                    <div class="node-title">Image Frame</div>
-                                    <div class="node-details">128 × 128 × 3 RGB</div>
-                                </div>
-                                <div class="flow-arrow"><i class="lucide-chevrons-right"></i></div>
-                                <div class="flow-node cnn">
-                                    <div class="node-badge">CONV2D</div>
-                                    <div class="node-title">32 filters (3x3)</div>
-                                    <div class="node-details">ReLU Activation</div>
-                                </div>
-                                <div class="flow-arrow"><i class="lucide-chevrons-right"></i></div>
-                                <div class="flow-node pool">
-                                    <div class="node-badge">MAXPOOL2D</div>
-                                    <div class="node-title">2x2 Pool Size</div>
-                                    <div class="node-details">Downsampling</div>
-                                </div>
-                                <div class="flow-arrow"><i class="lucide-chevrons-right"></i></div>
-                                <div class="flow-node cnn">
-                                    <div class="node-badge">CONV2D</div>
-                                    <div class="node-title">64 & 128 filters</div>
-                                    <div class="node-details">Extract high-level features</div>
-                                </div>
-                                <div class="flow-arrow"><i class="lucide-chevrons-right"></i></div>
-                                <div class="flow-node dense">
-                                    <div class="node-badge">FLATTEN</div>
-                                    <div class="node-title">Dense Layer (256)</div>
-                                    <div class="node-details">Dropout (0.3) regularization</div>
-                                </div>
-                                <div class="flow-arrow"><i class="lucide-chevrons-right"></i></div>
-                                <div class="flow-node output">
-                                    <div class="node-badge">SIGMOID</div>
-                                    <div class="node-title">Binary Output</div>
-                                    <div class="node-details">0.0 (Real) to 1.0 (Fake)</div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- TAB 3: DATASET HUB -->
-                <section class="tab-pane" id="dataset-tab">
-                    <div class="dataset-layout">
-                        <div class="glass-panel welcome-panel">
-                            <div class="icon-header">
-                                <i class="lucide-database-backup"></i>
-                            </div>
-                            <h2>Expand & Train Your Deepfake Model</h2>
-                            <p>To make your deepfake detector highly robust, you need to train it on a larger diversity of images. We have configured the <strong>140k Real & Fake Faces</strong> dataset to fit your existing pipeline perfectly.</p>
-                        </div>
-
-                        <div class="dataset-sections">
-                            <!-- Download Instructions -->
-                            <div class="glass-panel instr-panel">
-                                <div class="panel-header">
-                                    <i class="lucide-download-cloud"></i>
-                                    <h2>Step 1: Download the Dataset</h2>
-                                </div>
-                                <div class="instructions-content">
-                                    <p>We created a custom python downloader script to make this easy. In your local workspace terminal, execute:</p>
-                                    <pre class="code-terminal">python download_dataset.py</pre>
-                                    <p>This script will:</p>
-                                    <ol>
-                                        <li>Help you authenticate with the Kaggle API.</li>
-                                        <li>Download the 1.2 GB dataset automatically.</li>
-                                        <li>Extract and restructure folders to match your notebook's folder structure (e.g. <code>Dataset/Train/Fake</code>).</li>
-                                    </ol>
-                                </div>
-                            </div>
-
-                            <!-- Colab Training Instructions -->
-                            <div class="glass-panel instr-panel">
-                                <div class="panel-header">
-                                    <i class="lucide-play-circle"></i>
-                                    <h2>Step 2: Train on Google Colab</h2>
-                                </div>
-                                <div class="instructions-content">
-                                    <p>Since training 140,000 images on a local CPU takes a long time, we recommend training in Google Colab using a free GPU:</p>
-                                    <ol>
-                                        <li>Compress the newly downloaded <code>Dataset/</code> folder into a zip file named <strong><code>Dataset.zip</code></strong>.</li>
-                                        <li>Upload <code>Dataset.zip</code> to your main Google Drive directory.</li>
-                                        <li>Open your notebook in Google Colab and run it. The first few cells will automatically mount your Google Drive and extract <code>Dataset.zip</code> to Colab's workspace.</li>
-                                    </ol>
-                                </div>
-                            </div>
-
-                            <!-- Model Deployment Instructions -->
-                            <div class="glass-panel instr-panel">
-                                <div class="panel-header">
-                                    <i class="lucide-upload"></i>
-                                    <h2>Step 3: Export Model to Frontend</h2>
-                                </div>
-                                <div class="instructions-content">
-                                    <p>Once your model finishes training in Colab, append this code cell to the end of your notebook and run it to save your trained weights:</p>
-                                    <pre class="code-terminal"># Save the model
-model.save("deepfake_model.h5")
-from google.colab import files
-files.download("deepfake_model.h5")</pre>
-                                    <p>Place the downloaded <strong><code>deepfake_model.h5</code></strong> file directly inside this project's root folder and restart the server. The status indicator in the top right will change to <span class="live-tag">LIVE MODE</span>, and the web app will use your custom AI model to run real-time inference!</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-
-                <!-- TAB 4: AUDIT HISTORY -->
-                <section class="tab-pane" id="history-tab">
-                    <div class="history-layout">
-                        <div class="glass-panel history-header-panel">
-                            <div class="history-header-left">
-                                <i class="lucide-history"></i>
-                                <h2>Forensic Scan Logs</h2>
-                                <span class="panel-subtitle">History database of neural network model decisions</span>
-                            </div>
-                            <button class="btn btn-secondary btn-danger-hud" id="clear-history-btn">
-                                <i class="lucide-trash-2"></i>
-                                <span>Clear Audit Logs</span>
-                            </button>
-                        </div>
-
-                        <div class="glass-panel history-table-panel">
-                            <div class="table-responsive">
-                                <table class="history-table" id="history-table">
-                                    <thead>
-                                        <tr>
-                                            <th>Timestamp</th>
-                                            <th>File Checked</th>
-                                            <th>Media Type</th>
-                                            <th>AI Verdict</th>
-                                            <th>Confidence</th>
-                                            <th>Actions</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody id="history-table-body">
-                                        <!-- Table rows injected via JS -->
-                                    </tbody>
-                                </table>
-                                <div class="no-history-state" id="no-history-msg">
-                                    <div class="no-history-icon-wrapper">
-                                        <i class="lucide-folder-open"></i>
-                                    </div>
-                                    <h3>No Records Identified</h3>
-                                    <p>Scan an image or video inside the DeepScan HUD to record forensic predictions in the local database.</p>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </section>
-                
-            </div>
-        </main>
-    </div>
-
-    <!-- Onboarding overlay shown if app runs in Demo mode -->
-    <div class="onboarding-toast" id="onboarding-toast" style="display: none;">
-        <div class="toast-content">
-            <i class="lucide-info-circle toast-icon"></i>
-            <div class="toast-text">
-                <h4>Running in Demonstration Mode</h4>
-                <p>The app is using simulated predictions because <code>deepfake_model.h5</code> was not detected in the root folder. Go to the <strong>Dataset Hub</strong> tab to learn how to train and link your neural network model!</p>
-            </div>
-            <button class="toast-close" id="close-toast-btn">&times;</button>
-        </div>
-    </div>
-
-    <script src="/static/app.js"></script>
+  <!-- Load Components as type="text/babel" scripts -->
+  <script type="text/babel" src="/static/FadingVideo.jsx"></script>
+  <script type="text/babel" src="/static/BlurText.jsx"></script>
+  <script type="text/babel" src="/static/Navbar.jsx"></script>
+  <script type="text/babel" src="/static/Hero.jsx"></script>
+  <script type="text/babel" src="/static/ForensicHUD.jsx"></script>
+  <script type="text/babel" src="/static/Analytics.jsx"></script>
+  <script type="text/babel" src="/static/DatasetHub.jsx"></script>
+  <script type="text/babel" src="/static/History.jsx"></script>
+  <script type="text/babel" src="/static/App.jsx"></script>
 </body>
 </html>
