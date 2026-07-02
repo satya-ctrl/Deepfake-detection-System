@@ -6,4 +6,4 @@ gunicorn
 Pillow
 numpy
 opencv-python-headless
-tflite-runtime
+tensorflow-cpu
