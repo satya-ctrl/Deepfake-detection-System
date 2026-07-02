@@ -55,7 +55,7 @@ const App = () => {
           <div>
             <h4 className="text-xs font-bold font-body text-white uppercase">Running in Demonstration Mode</h4>
             <p className="text-[11px] font-body font-light text-white/70 mt-1 leading-relaxed">
-              The app is using simulated predictions because <code>deepfake_model.h5</code> was not detected in the root folder. Go to the <strong>Dataset Hub</strong> tab to learn how to train and link your neural network model!
+              The app is using simulated predictions because deploying the full 78MB AI model to a live server incurs heavy hosting costs. <strong>LIVE AI MODE</strong> is fully functional when running this project locally on your system!
             </p>
           </div>
           <button 
