@@ -182,12 +182,8 @@ const Analytics = () => {
 
   return (
     <section className="relative min-h-screen w-full bg-black overflow-hidden flex flex-col justify-between z-10 pt-28 pb-10">
-      {/* Background Video */}
-      <window.FadingVideo 
-        src="https://images.pexels.com/video-files/3129595/3129595-uhd_2560_1440_30fps.mp4"
-        className="absolute inset-0 w-full h-full object-cover z-0 opacity-30"
-        style={{ width: '100%', height: '100%' }}
-      />
+      {/* Dark Greenish Background */}
+      <div className="absolute inset-0 z-0" style={{ background: 'radial-gradient(ellipse at 50% 0%, rgba(16, 185, 129, 0.12) 0%, rgba(0, 0, 0, 1) 70%)' }} />
 
       <div className="relative z-10 px-6 md:px-16 lg:px-20 flex-1 flex flex-col w-full">
         {/* Section Header */}

@@ -90,11 +90,17 @@ MODEL_PATH = "deepfake_model.h5"
 trained_model = None
 is_demo_mode = True
 
+# Custom Dense to handle 'quantization_config' backward compatibility issue
+class CustomDense(tf.keras.layers.Dense):
+    def __init__(self, *args, **kwargs):
+        kwargs.pop('quantization_config', None)
+        super().__init__(*args, **kwargs)
+
 # Load TensorFlow Model if available
 if HAS_TF and os.path.exists(MODEL_PATH):
     try:
         print(f"[~] Loading deepfake detection model from '{MODEL_PATH}'...")
-        trained_model = tf.keras.models.load_model(MODEL_PATH)
+        trained_model = tf.keras.models.load_model(MODEL_PATH, custom_objects={'Dense': CustomDense})
         is_demo_mode = False
         print("[SUCCESS] Model loaded successfully! Running in LIVE MODE.")
     except Exception as e:
@@ -134,6 +140,10 @@ def get_image_hash_prediction(file_path):
         base_conf = 70.0 + (hash_val % 25) + (hash_val % 100) / 100.0
 
     return "FAKE" if is_fake else "REAL", min(base_conf, 99.9)
+
+@app.route('/status')
+def get_status():
+    return jsonify({'demo_mode': is_demo_mode})
 
 @app.route('/')
 def index():
@@ -230,8 +240,9 @@ def predict():
                                 else:
                                     prob = random.uniform(0.1, 0.9)
                             
-                            is_frame_fake = prob <= 0.5
-                            frame_conf = (1.0 - prob) * 100 if is_frame_fake else prob * 100
+                            # NOTE: Labels flipped because model was trained with swapped folders
+                            is_frame_fake = prob > 0.5
+                            frame_conf = prob * 100 if is_frame_fake else (1.0 - prob) * 100
                             
                             if is_frame_fake:
                                 fake_count += 1
@@ -418,11 +429,12 @@ def predict():
                 
                 prob = float(trained_model.predict(img_array)[0][0])
                 
+                # NOTE: Labels flipped because model was trained with swapped folders
                 if prob > 0.5:
-                    prediction_label = "REAL"
+                    prediction_label = "FAKE"
                     confidence = prob * 100
                 else:
-                    prediction_label = "FAKE"
+                    prediction_label = "REAL"
                     confidence = (1.0 - prob) * 100
                     
                 details['model_raw_output'] = prob

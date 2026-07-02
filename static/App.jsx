@@ -18,16 +18,13 @@ const App = () => {
   const [isDemoMode, setIsDemoMode] = useState(true);
   const [showToast, setShowToast] = useState(true);
 
-  // Check initial demo mode from database status or history
+  // Check initial demo mode from global backend status
   useEffect(() => {
-    fetch('/history')
+    fetch('/status')
       .then(res => res.json())
       .then(data => {
-        if (data && data.length > 0) {
-          // If there are entries, take the demo mode of the latest entry if present
-          if (data[0].details && data[0].details.hasOwnProperty('demo_mode')) {
-            setIsDemoMode(data[0].details.demo_mode);
-          }
+        if (data && data.hasOwnProperty('demo_mode')) {
+          setIsDemoMode(data.demo_mode);
         }
       })
       .catch(err => console.log("Init status check:", err));

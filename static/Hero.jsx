@@ -5,7 +5,7 @@ const Hero = ({ setActiveTab }) => {
     <section id="hero" className="relative min-h-screen w-full bg-black overflow-hidden flex flex-col justify-between z-10">
       {/* Background Video */}
       <window.FadingVideo 
-        src="https://images.pexels.com/video-files/3130284/3130284-uhd_2560_1440_30fps.mp4"
+        src="https://videos.pexels.com/video-files/3130284/3130284-uhd_2560_1440_30fps.mp4"
         className="absolute left-1/2 top-0 -translate-x-1/2 object-cover object-top z-0 opacity-50"
         style={{ width: '120%', height: '120%' }}
       />
