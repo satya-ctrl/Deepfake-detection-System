@@ -2,6 +2,7 @@ services:
   - type: web
     name: deepsense-ai
     env: python
+    plan: free
     buildCommand: pip install -r requirements-render.txt
     startCommand: gunicorn app:app
     envVars:
