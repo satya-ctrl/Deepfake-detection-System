@@ -15,14 +15,34 @@ try:
     import numpy as np
     HAS_CV2 = True
 except ImportError:
-    print("[!] OpenCV or NumPy not installed. Face detection will use simulated coordinates.")
+    try:
+        import numpy as np
+    except ImportError:
+        pass
+    print("[!] OpenCV not installed. Face detection will use simulated coordinates.")
 
 HAS_TF = False
 try:
     import tensorflow as tf
     HAS_TF = True
 except ImportError:
-    print("[!] TensorFlow not installed. Running in Demo Mode (Simulated AI Inference).")
+    print("[!] TensorFlow not installed.")
+
+HAS_TFLITE = False
+tflite_interpreter = None
+try:
+    import tflite_runtime.interpreter as tflite
+    HAS_TFLITE = True
+except ImportError:
+    try:
+        if HAS_TF:
+            tflite = tf.lite
+            HAS_TFLITE = True
+    except Exception:
+        pass
+
+if not HAS_TF and not HAS_TFLITE:
+    print("[!] No ML runtime found. Running in Demo Mode (Simulated AI Inference).")
 
 HAS_PANDAS = False
 try:
@@ -86,28 +106,42 @@ with app.app_context():
 
 
 # Global model state
-MODEL_PATH = "deepfake_model.h5"
+MODEL_PATH_H5 = "deepfake_model.h5"
+MODEL_PATH_TFLITE = "deepfake_model.tflite"
 trained_model = None
 is_demo_mode = True
+use_tflite = False
 
-# Load TensorFlow Model if available
-if HAS_TF and os.path.exists(MODEL_PATH):
+# Try loading TFLite model first (lightweight, works on Vercel)
+if HAS_TFLITE and os.path.exists(MODEL_PATH_TFLITE):
     try:
-        # Custom Dense to handle 'quantization_config' backward compatibility issue
+        print(f"[~] Loading TFLite model from '{MODEL_PATH_TFLITE}'...")
+        tflite_interpreter = tflite.Interpreter(model_path=MODEL_PATH_TFLITE)
+        tflite_interpreter.allocate_tensors()
+        use_tflite = True
+        is_demo_mode = False
+        print("[SUCCESS] TFLite model loaded! Running in LIVE MODE.")
+    except Exception as e:
+        print(f"[x] Error loading TFLite model: {e}.")
+
+# Fallback: Try loading full TensorFlow .h5 model (for local dev)
+if is_demo_mode and HAS_TF and os.path.exists(MODEL_PATH_H5):
+    try:
         class CustomDense(tf.keras.layers.Dense):
             def __init__(self, *args, **kwargs):
                 kwargs.pop('quantization_config', None)
                 super().__init__(*args, **kwargs)
 
-        print(f"[~] Loading deepfake detection model from '{MODEL_PATH}'...")
-        trained_model = tf.keras.models.load_model(MODEL_PATH, custom_objects={'Dense': CustomDense})
+        print(f"[~] Loading TF model from '{MODEL_PATH_H5}'...")
+        trained_model = tf.keras.models.load_model(MODEL_PATH_H5, custom_objects={'Dense': CustomDense})
         is_demo_mode = False
-        print("[SUCCESS] Model loaded successfully! Running in LIVE MODE.")
+        print("[SUCCESS] TF model loaded! Running in LIVE MODE.")
     except Exception as e:
-        print(f"[x] Error loading model: {e}. Falling back to Demo Mode.")
-else:
-    print("[!] No local model found. Running in DEMO MODE (simulated results).")
-    print("    -> To run in LIVE MODE, place your trained 'deepfake_model.h5' in this directory.")
+        print(f"[x] Error loading TF model: {e}. Falling back to Demo Mode.")
+
+if is_demo_mode:
+    print("[!] No model found. Running in DEMO MODE (simulated results).")
+    print("    -> Place 'deepfake_model.tflite' or 'deepfake_model.h5' in this directory.")
 
 # Haar Cascade for face detection
 face_cascade = None
@@ -115,6 +149,18 @@ if HAS_CV2:
     cascade_path = cv2.data.haarcascades + 'haarcascade_frontalface_default.xml'
     if os.path.exists(cascade_path):
         face_cascade = cv2.CascadeClassifier(cascade_path)
+
+def run_inference(img_array):
+    """Run model inference using TFLite or TensorFlow. Returns raw probability."""
+    if use_tflite and tflite_interpreter is not None:
+        input_details = tflite_interpreter.get_input_details()
+        output_details = tflite_interpreter.get_output_details()
+        tflite_interpreter.set_tensor(input_details[0]['index'], img_array)
+        tflite_interpreter.invoke()
+        return float(tflite_interpreter.get_tensor(output_details[0]['index'])[0][0])
+    elif trained_model is not None and HAS_TF:
+        return float(trained_model.predict(img_array, verbose=0)[0][0])
+    return None
 
 def get_image_hash_prediction(file_path):
     """Generates a consistent simulated prediction based on file hashing and details."""
@@ -219,13 +265,15 @@ def predict():
                             
                             # 1.b. Inference on input_img
                             prob = 0.5
-                            if not is_demo_mode and trained_model is not None and HAS_TF:
+                            if not is_demo_mode and HAS_CV2:
                                 try:
                                     img_rgb = cv2.cvtColor(input_img, cv2.COLOR_BGR2RGB)
                                     img_resized = cv2.resize(img_rgb, (128, 128))
                                     img_array = img_resized.astype('float32') / 255.0
                                     img_array = np.expand_dims(img_array, axis=0)
-                                    prob = float(trained_model.predict(img_array, verbose=0)[0][0])
+                                    result = run_inference(img_array)
+                                    if result is not None:
+                                        prob = result
                                 except Exception as e:
                                     print(f"[!] Frame inference error: {e}")
                                     prob = 0.5
@@ -418,7 +466,7 @@ def predict():
             details['sharpness_index'] = round(random.uniform(50.0, 90.0), 2)
             
         # 2. Prediction Model Inference
-        if not is_demo_mode and trained_model is not None and HAS_TF and HAS_CV2:
+        if not is_demo_mode and HAS_CV2:
             try:
                 # Load and prepare image for CNN model (128x128, RGB)
                 img = cv2.imread(file_path)
@@ -427,17 +475,19 @@ def predict():
                 img_array = img_resized.astype('float32') / 255.0
                 img_array = np.expand_dims(img_array, axis=0)
                 
-                prob = float(trained_model.predict(img_array)[0][0])
+                prob = run_inference(img_array)
                 
-                # NOTE: Labels flipped because model was trained with swapped folders
-                if prob > 0.5:
-                    prediction_label = "FAKE"
-                    confidence = prob * 100
+                if prob is not None:
+                    # NOTE: Labels flipped because model was trained with swapped folders
+                    if prob > 0.5:
+                        prediction_label = "FAKE"
+                        confidence = prob * 100
+                    else:
+                        prediction_label = "REAL"
+                        confidence = (1.0 - prob) * 100
+                    details['model_raw_output'] = prob
                 else:
-                    prediction_label = "REAL"
-                    confidence = (1.0 - prob) * 100
-                    
-                details['model_raw_output'] = prob
+                    prediction_label, confidence = get_image_hash_prediction(file_path)
                 
             except Exception as e:
                 print(f"[!] Inference error: {e}. Falling back to simulation.")
