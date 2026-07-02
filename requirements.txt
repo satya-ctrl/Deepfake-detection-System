@@ -4,6 +4,3 @@ Flask-SQLAlchemy
 psycopg2-binary
 gunicorn
 Pillow
-numpy
-opencv-python-headless
-tensorflow-cpu
