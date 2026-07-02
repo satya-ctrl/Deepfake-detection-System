@@ -90,15 +90,15 @@ MODEL_PATH = "deepfake_model.h5"
 trained_model = None
 is_demo_mode = True
 
-# Custom Dense to handle 'quantization_config' backward compatibility issue
-class CustomDense(tf.keras.layers.Dense):
-    def __init__(self, *args, **kwargs):
-        kwargs.pop('quantization_config', None)
-        super().__init__(*args, **kwargs)
-
 # Load TensorFlow Model if available
 if HAS_TF and os.path.exists(MODEL_PATH):
     try:
+        # Custom Dense to handle 'quantization_config' backward compatibility issue
+        class CustomDense(tf.keras.layers.Dense):
+            def __init__(self, *args, **kwargs):
+                kwargs.pop('quantization_config', None)
+                super().__init__(*args, **kwargs)
+
         print(f"[~] Loading deepfake detection model from '{MODEL_PATH}'...")
         trained_model = tf.keras.models.load_model(MODEL_PATH, custom_objects={'Dense': CustomDense})
         is_demo_mode = False
